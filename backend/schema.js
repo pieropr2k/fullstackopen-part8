@@ -35,6 +35,7 @@ const typeDefs = `
             genre: String
         ): [Book!]!
         findBook(name: String!): Book
+        allGenres: [String]!
     }
     type Mutation {
         addBook(
@@ -49,11 +50,16 @@ const typeDefs = `
         ): Author
         createUser(
             username: String!
-        ): User!
+            favoriteGenre: String!
+        ): User
         login(
             username: String!
             password: String!
         ): Token
+        editLoggedUserInfo(
+            username: String
+            favoriteGenre: String
+        ): User
     }
 `
 

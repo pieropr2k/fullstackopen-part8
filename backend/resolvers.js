@@ -40,13 +40,20 @@ const resolvers = {
             return await Book.find(filter).populate('author');
         },
         findBook: async (root, args) =>
-            await Book.findOne({ name: args.name })
+            await Book.findOne({ name: args.name }),
+        allGenres: async (root, args) => {
+            const books = await Book.find({});
+            const bookGenres = [...new Set(books.map(book => book.genres).flat())];
+            const users = await User.find({});
+            const userGenres = [...new Set(users.map(user => user.favoriteGenre))];
+            return [...new Set([...bookGenres, ...userGenres])].filter(Boolean);
+        }
         //books.find(p => p.name === args.name)
     },
     Author: {
+        // Exercise 8.14
         bookCount: async (root) => {
-            return await Book.countDocuments({ author: root.name });
-            //return books.filter(book => book.author === root.name).length;
+            return await Book.countDocuments({ author: root._id });
         }
     },
     Mutation: {
@@ -126,13 +133,13 @@ const resolvers = {
         },
         // Exercise 8.16
         createUser: async (root, args) => {
-            const user = new User({ username: args.username })
+            const user = new User({ username: args.username, favoriteGenre: args.favoriteGenre })
             return await user.save()
                 .catch(error => {
                     throw new GraphQLError('Creating the user failed', {
                         extensions: {
                             code: 'BAD_USER_INPUT',
-                            invalidArgs: args.username,
+                            invalidArgs: [args.username, args.favoriteGenre],
                             error
                         }
                     })
@@ -152,6 +159,35 @@ const resolvers = {
                 id: user._id,
             }
             return { value: jwt.sign(userForToken, process.env.JWT_SECRET) }
+        },
+        // Exercise 8."20"
+        editLoggedUserInfo: async (root, args, context) => {
+            const currentUser = context.currentUser
+            if (!currentUser) {
+                throw new GraphQLError('not authenticated', {
+                    extensions: {
+                        code: 'BAD_USER_INPUT',
+                    }
+                })
+            }
+            const user = await User.findOne({ username: currentUser.username });
+            if (!user) {
+                return null;
+            }
+            user.username = args.username ? args.username : currentUser.username;
+            user.favoriteGenre = args.favoriteGenre ? args.favoriteGenre : currentUser.favoriteGenre;
+            try {
+                await user.save();
+            } catch (error) {
+                throw new GraphQLError('Saving user failed', {
+                    extensions: {
+                        code: 'BAD_USER_INPUT',
+                        invalidArgs: [args.username, args.favoriteGenre],
+                        error
+                    }
+                })
+            }
+            return user;
         },
     }
 }
