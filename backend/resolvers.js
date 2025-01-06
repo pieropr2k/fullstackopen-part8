@@ -35,9 +35,24 @@ const resolvers = {
                 filter.author = author ? author._id : null;
             }
             if (args.genre) {
+                delete filter['genre'];
                 filter.genres = { $in: [args.genre] };
             }
+            //console.log(filter);
             return await Book.find(filter).populate('author');
+        },
+        // Exercise 21-22 = Fixed Exercise 19
+        favoriteGenreBooks: async (root, args, context) => {
+            const currentUser = context.currentUser
+            if (!currentUser) {
+                throw new GraphQLError('not authenticated', {
+                    extensions: {
+                        code: 'BAD_USER_INPUT',
+                    }
+                })
+            }
+            const books = await Book.find({ genres: { $in: [currentUser.favoriteGenre] } }).populate('author');
+            return { favGenre: currentUser.favoriteGenre, books };
         },
         findBook: async (root, args) =>
             await Book.findOne({ name: args.name }),
@@ -73,32 +88,34 @@ const resolvers = {
             const new_book = new Book({ title, published, genres });
             let the_author = await Author.findOne({ name: author });
             //books = books.concat(book)
-            if (!the_author) {
+            if (!the_author && (title && title.length >= 5 && published && genres && genres.length >= 0)) {
                 the_author = new Author({ name: author });
                 try {
                     await the_author.save();
                 } catch (error) {
                     throw new GraphQLError('Saving book failed', {
                         extensions: {
-                            code: 'BAD_USER_INPUT',
-                            invalidArgs: args.name,
+                            code: 'BAD_AUTHOR_INPUT',
+                            invalidArgs: args.author,
                             error
                         }
                     })
                 }
             }
-            new_book.author = the_author;
+
             try {
+                new_book.author = the_author;
                 await new_book.save();
             } catch (error) {
                 throw new GraphQLError('Saving book failed', {
                     extensions: {
-                        code: 'BAD_USER_INPUT',
-                        invalidArgs: args.name,
+                        code: 'BAD_BOOK_INPUT',
+                        invalidArgs: [args.title, args.published, args.genres, the_author],
                         error
                     }
                 })
             }
+
             return new_book;
         },
         // Exercise 8.15

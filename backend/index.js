@@ -15,7 +15,8 @@ const jwt = require('jsonwebtoken')
 async function cleanBooks() {
   const books = await Book.find({});
   for (const book of books) {
-    if (true) {
+    console.log(book.author);
+    if (!book.author) {
       console.log(`Book without author: ${book.title}`);
       await Book.findByIdAndDelete(book._id);
     }

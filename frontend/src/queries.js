@@ -10,6 +10,7 @@ export const ALL_AUTHORS = gql`
     }
   }
 `
+
 // Exercise 8.11-12
 // set birthyear
 export const SET_BIRTHYEAR = gql`
@@ -36,6 +37,37 @@ export const ALL_BOOKS = gql`
   }
 `
 
+export const BOOKS_FILTERED = gql`
+  query Books($genre: String!) {
+    allBooks (genre: $genre) {
+      title 
+        author {
+          name
+        }
+        published 
+        genres
+    }
+  }
+`;
+
+export const FAVORITE_GENRE_BOOKS = gql`
+  query {
+    favoriteGenreBooks {
+      favGenre
+      books {
+        title 
+        author {
+          id
+          name
+          born
+        }
+        published 
+        genres
+      }
+    }
+  }
+`
+
 // Exercise 8.10
 export const ADD_BOOK = gql`
   mutation addNewBook($title: String!, $author: String!, $published: Int!, $genres: [String]) {
@@ -43,7 +75,10 @@ export const ADD_BOOK = gql`
         id  
         title
         author {
+          id
           name
+          born
+          bookCount
         }
         published
         genres

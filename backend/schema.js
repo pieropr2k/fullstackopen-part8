@@ -15,6 +15,7 @@ const typeDefs = `
         born: Int
         bookCount: Int!
     }
+
     type Book {
         title: String!
         published: Int!
@@ -22,6 +23,12 @@ const typeDefs = `
         id: ID!
         genres: [String!]
     }
+
+    type FavoriteGenreBooks {
+        favGenre: String!
+        books: [Book!]!
+    }
+    
     type Query {
         me: User
         authorCount: Int!
@@ -34,6 +41,7 @@ const typeDefs = `
             id: ID
             genre: String
         ): [Book!]!
+        favoriteGenreBooks: FavoriteGenreBooks
         findBook(name: String!): Book
         allGenres: [String]!
     }

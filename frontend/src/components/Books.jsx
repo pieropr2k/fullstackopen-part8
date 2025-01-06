@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client";
-import { ALL_BOOKS, ALL_GENRES } from "../queries.js";
+import { ALL_BOOKS, ALL_GENRES, BOOKS_FILTERED } from "../queries.js";
 import { useState } from "react";
 
 // Exercise 8.19
@@ -16,11 +16,12 @@ const FilterGenre = ({ allGenres = [], setFilter }) => {
 
 // Exercise 8.9
 const Books = () => {
-    
     const [genre, setGenre] = useState('all');
-    //const { loading, error, data } = useQuery(ALL_BOOKS);
-    //const result = useQuery(ALL_GENRES);
-    const { loading: booksLoading, error: booksError, data: booksData } = useQuery(ALL_BOOKS);
+    // Exercise 8.21
+    const { loading: booksLoading, error: booksError, data: booksData } = useQuery(
+        genre === 'all' ? ALL_BOOKS : BOOKS_FILTERED, {
+        variables: { genre }
+    });
     const { loading: genresLoading, error: genresError, data: genresData } = useQuery(ALL_GENRES);
 
     if (booksLoading || genresLoading) {
@@ -33,11 +34,11 @@ const Books = () => {
             {genresError && <div>Error: {genresError.message}</div>}
         </>
     }
-    
+
+    // Exercise 8.21
+    const books = booksData.allBooks;
     // Exercise 8.19
-    const books = genre === 'all' ? booksData.allBooks : booksData.allBooks.filter(book => book.genres.includes(genre));
-    //const genres = [...new Set(books.map(book => book.genres).flat())];
-    //console.log(result.data);
+    //const books = genre === 'all' ? booksData.allBooks : booksData.allBooks.filter(book => book.genres.includes(genre));
     const genres = genresData.allGenres;
     
     return (
@@ -57,7 +58,8 @@ const Books = () => {
                             <td>{a.author.name}</td>
                             <td>{a.published}</td>
                         </tr>
-                    ))}
+                    ))
+                    }
                 </tbody>
             </table>
             <FilterGenre allGenres={genres} setFilter={setGenre}/>

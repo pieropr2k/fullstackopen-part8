@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client'
-import { ADD_BOOK, ALL_AUTHORS, ALL_BOOKS } from '../queries.js'
+import { ADD_BOOK, ALL_AUTHORS, ALL_BOOKS, ALL_GENRES } from '../queries.js'
 
 const NewBook = ({setNotify}) => {
   const [title, setTitle] = useState('')
@@ -12,11 +12,43 @@ const NewBook = ({setNotify}) => {
   // Exercise 8.10
   const [ addBook ] = useMutation(ADD_BOOK,
     {
-      refetchQueries: [  {query: ALL_BOOKS }, {query: ALL_AUTHORS} ],
+      //refetchQueries: [{query: ALL_AUTHORS}],
       onError: (error) => {
         const messages = error.graphQLErrors.map(e => e.message).join('\n')
         setNotify(messages)
-      }
+      },
+      // Exercise 8.22
+      update: (cache, response) => {
+        cache.updateQuery({query: ALL_AUTHORS}, ({ allAuthors }) => {
+          const newAuthor = response.data.addBook.author;
+          const {id, name, born, bookCount} = newAuthor;
+          return {
+            allAuthors: allAuthors.some(author => author.name === name)
+              ? allAuthors.map(author =>
+                  author.name === name
+                    ? { ...author, bookCount: author.bookCount + 1 }
+                    : author
+                )
+              : [...allAuthors, { id, name, born, bookCount }]
+          };
+        });
+
+        cache.updateQuery({ query: ALL_GENRES }, ({ allGenres }) => {
+          const newGenres = response.data.addBook.genres;
+          return {
+            //allPersons: allPersons.concat(response.data.addPerson),
+            allGenres: [...new Set([...allGenres, ...newGenres])]
+          }
+        })
+        cache.updateQuery({ query: ALL_BOOKS }, ({ allBooks }) => {
+          const newBook = response.data.addBook;
+          console.log(newBook)
+          return {
+            allBooks: [...allBooks, newBook]
+          };
+        });
+        
+      },
     }
   )
 
